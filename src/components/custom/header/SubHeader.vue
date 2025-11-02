@@ -5,8 +5,8 @@
         <b-col md="12">
           <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
-              <h1>PHQ-9</h1>
-              <p>5-10 Minutes</p>
+              <h1>DSM-5 Dashboard</h1>
+              <p>Your portal for understanding and administering to your patients</p>
             </div>
             <div>
               <a href="" class="btn btn-link btn-soft-light">
