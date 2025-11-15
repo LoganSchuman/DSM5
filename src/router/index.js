@@ -1,6 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import DsmHub from '@/views/dsm-hub/DsmHub.vue'
 import Phq9Test from '@/views/dsm-hub/Phq9Test.vue'
+import Gad7Test from '@/views/dsm-hub/Gad7Test.vue'
+import AsrsTest from '@/views/dsm-hub/AsrsTest.vue'
+import Pcl5Test from '@/views/dsm-hub/Pcl5Test.vue'
+import MdqTest from '@/views/dsm-hub/MdqTest.vue'
+import AuditTest from '@/views/dsm-hub/AuditTest.vue'
 
 // Auth Default Routes
 const authChildRoutes = (prefix) => [
@@ -60,10 +65,40 @@ const defaultChildRoutes = (prefix) => [
     component: DsmHub // Uses the import from the top
   },
   {
-    path: 'dsm-hub/phq-9-test', // This will become /dashboard/dsm-hub/phq-9-test
+    path: 'dsm-hub/phq-9-test',
     name: prefix + '.phq-9-test',
     meta: { auth: true, name: 'PHQ-9 Test Form', isBanner: true },
-    component: Phq9Test // Uses the import from the top
+    component: Phq9Test
+  },
+  {
+    path: 'dsm-hub/gad-7-test',
+    name: prefix + '.gad-7-test',
+    meta: { auth: true, name: 'GAD-7 Test Form', isBanner: true },
+    component: Gad7Test
+  },
+  {
+    path: 'dsm-hub/asrs-test',
+    name: prefix + '.asrs-test',
+    meta: { auth: true, name: 'ASRS Test Form', isBanner: true },
+    component: AsrsTest
+  },
+  {
+    path: 'dsm-hub/pcl-5-test',
+    name: prefix + '.pcl-5-test',
+    meta: { auth: true, name: 'PCL-5 Test Form', isBanner: true },
+    component: Pcl5Test
+  },
+  {
+    path: 'dsm-hub/mdq-test',
+    name: prefix + '.mdq-test',
+    meta: { auth: true, name: 'MDQ Test Form', isBanner: true },
+    component: MdqTest
+  },
+  {
+    path: 'dsm-hub/audit-test',
+    name: prefix + '.audit-test',
+    meta: { auth: true, name: 'AUDIT Test Form', isBanner: true },
+    component: AuditTest
   },
   {
     path: 'documentation',
