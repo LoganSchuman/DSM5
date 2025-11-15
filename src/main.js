@@ -4,7 +4,6 @@ import './registerServiceWorker'
 import router from './router'
 import store from './store'
 
-
 // Library Components
 import VueSweetalert2 from 'vue-sweetalert2'
 import VueApexCharts from 'vue3-apexcharts'

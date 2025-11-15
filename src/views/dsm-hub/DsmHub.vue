@@ -9,7 +9,6 @@
           </div>
         </div>
         <div class="card-body">
-          <!-- Search Bar -->
           <div class="row justify-content-center mb-4">
             <div class="col-md-8">
               <div class="input-group">
@@ -24,7 +23,6 @@
             </div>
           </div>
 
-          <!-- Form Cards -->
           <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             <div class="col" v-for="form in filteredForms" :key="form.id">
               <div class="card h-100">
@@ -37,7 +35,7 @@
                   <router-link :to="{ name: `default.${form.id}-test` }" class="btn btn-soft-secondary btn-sm me-2">
                     View Details
                   </router-link>
-                  <button class="btn btn-primary btn-sm">Assign to Patient</button>
+                  <button class="btn btn-primary btn-sm" @click="openAssignModal(form)">Assign to Patient</button>
                 </div>
               </div>
             </div>
@@ -49,11 +47,48 @@
       </div>
     </div>
   </div>
+
+  <AssignPatientModal 
+    v-model="showAssignModal" 
+    :form="selectedForm" 
+    @assign="handleAssign" 
+  />
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue' // 1. Import inject
+import AssignPatientModal from '@/components/modals/AssignPatientModal.vue'
+import { patients } from '../../mockdata/patients.js' 
+// import { useBToast } from 'bootstrap-vue-3' // <-- REMOVED THIS BROKEN LINE
 
+const swal = inject('$swal') // 2. Get SweetAlert from your main.js
+
+const showAssignModal = ref(false)
+const selectedForm = ref(null)
+
+function openAssignModal(form) {
+  selectedForm.value = form
+  showAssignModal.value = true
+}
+
+function handleAssign(patientId) {
+  const patient = patients.find(p => p.id === patientId)
+  
+  showAssignModal.value = false
+
+  // 3. Use swal.fire() for the confirmation toast
+  swal.fire({
+    title: 'Assignment Successful!',
+    text: `Successfully assigned ${selectedForm.value.title} to ${patient.name}.`,
+    icon: 'success',
+    timer: 2000,
+    showConfirmButton: false,
+    toast: true,
+    position: 'top-end'
+  })
+  
+  selectedForm.value = null
+}
 
 const searchQuery = ref('')
 
@@ -107,4 +142,3 @@ const filteredForms = computed(() => {
   )
 })
 </script>
-
