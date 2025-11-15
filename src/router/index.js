@@ -2,15 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import DsmHub from '@/views/dsm-hub/DsmHub.vue'
 import Phq9Test from '@/views/dsm-hub/Phq9Test.vue'
 
-// Design System Routes
-const designSystemChildRoutes = (prefix) => [
-  {
-    path: '',
-    name: prefix + '.main',
-    meta: { auth: true, name: 'Design System' },
-    component: () => import('@/views/design-system/IndexPage.vue')
-  }
-]
 // Auth Default Routes
 const authChildRoutes = (prefix) => [
   {
@@ -73,6 +64,12 @@ const defaultChildRoutes = (prefix) => [
     name: prefix + '.phq-9-test',
     meta: { auth: true, name: 'PHQ-9 Test Form', isBanner: true },
     component: Phq9Test // Uses the import from the top
+  },
+  {
+    path: 'documentation',
+    name: prefix + '.documentation',
+    meta: { auth: true, name: 'Documentation & Help', isBanner: true },
+    component: () => import('@/views/extra/DocumentationPage.vue')
   },
   // Spacial Pages
   {
@@ -265,9 +262,7 @@ const errorRoutes = (prefix) => [
 const routes = [
   {
     path: '/',
-    name: 'design-system',
-    component: () => import('../layouts/guest/BlankLayout.vue'),
-    children: designSystemChildRoutes('design-system')
+    redirect: '/dashboard'
   },
   // Default Pages
   {
