@@ -1,6 +1,7 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
-  publicPath: process.env.NODE_ENV === 'production' ? process.env.BASE_URL : '/',
+  // This is the main fix:
+  publicPath: process.env.NODE_ENV === 'production' ? '/DSM-5-Dashboard/' : '/',
 
   pluginOptions: {
     i18n: {
@@ -13,8 +14,5 @@ module.exports = defineConfig({
   transpileDependencies: true
 })
 
-module.exports = {
-  publicPath: process.env.NODE_ENV === 'production'
-    ? '/YOUR_REPO_NAME/' // e.g., '/DSM-5-Dashboard/'
-    : '/'
-}
+// I have REMOVED the second, conflicting module.exports block.
+// This file is now complete.
