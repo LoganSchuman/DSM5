@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import DsmHub from '@/views/dsm-hub/DsmHub.vue'
 import Phq9Test from '@/views/dsm-hub/Phq9Test.vue'
 import Gad7Test from '@/views/dsm-hub/Gad7Test.vue'
