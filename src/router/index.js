@@ -357,7 +357,7 @@ const routes = [
 const router = createRouter({
   linkActiveClass: 'active',
   linkExactActiveClass: 'exact-active',
-  history: createWebHistory(process.env.BASE_URL),
+  hhistory: createWebHashHistory(process.env.BASE_URL),
   // base: process.env.BASE_URL,  <-- THIS WAS THE REDUNDANT LINE I REMOVED
   routes
 })
