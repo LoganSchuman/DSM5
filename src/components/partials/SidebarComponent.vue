@@ -2,7 +2,8 @@
   <default-sidebar>
     <ul class="navbar-nav iq-main-menu" id="sidebar-menu">
       <side-menu title="Home" :static-item="true"></side-menu>
-      <side-menu isTag="router-link" title="Dashboard" icon="view-grid" :route="{ to: 'default.dashboard' }"></side-menu>
+      <side-menu isTag="router-link" title="Physician Dashboard" icon="view-grid" :route="{ to: 'default.dashboard' }"></side-menu>
+      <side-menu isTag="router-link" title="Patient Dashboard" icon="user" :route="{ to: 'default.user-dashboard' }"></side-menu>
       <side-menu isTag="router-link" title="Assessments" icon="file" :route="{ to: 'default.dsm-hub' }"></side-menu>
 
       <side-menu title="Dev Tools" icon="brief-case" toggle-id="dev-tools" :caret-icon="true" :route="{ popup: 'false', to: 'dev-tools' }" @onClick="toggle" :active="devToolsActive">

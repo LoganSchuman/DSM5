@@ -59,6 +59,12 @@ const defaultChildRoutes = (prefix) => [
     component: () => import('@/views/dashboards/IndexPage.vue')
   },
   {
+    path: 'user-dashboard',
+    name: prefix + '.user-dashboard',
+    meta: { auth: true, name: 'My Dashboard', isBanner: true },
+    component: () => import('@/views/dashboards/UserDashboard.vue')
+  },
+  {
     path: 'dsm-hub', // This will become /dashboard/dsm-hub
     name: prefix + '.dsm-hub',
     meta: { auth: true, name: 'DSM-5 Form Hub', isBanner: true },
@@ -358,8 +364,18 @@ const router = createRouter({
   linkActiveClass: 'active',
   linkExactActiveClass: 'exact-active',
   history: createWebHashHistory(),
-  // base: process.env.BASE_URL,  <-- THIS WAS THE REDUNDANT LINE I REMOVED
-  routes
+  routes,
+
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } 
+    if (to.hash) {
+      return { el: to.hash }
+    }
+    return { top: 0, left: 0 }
+  }
+
 })
 
 export default router
