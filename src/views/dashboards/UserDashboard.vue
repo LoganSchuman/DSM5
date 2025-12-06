@@ -1,6 +1,5 @@
 <template>
   <div class="row">
-    <!-- Helpful Actions -->
     <div class="col-md-12 col-lg-12" data-aos="fade-up" data-aos-delay="200">
       <div class="row row-cols-1 row-cols-md-4 g-3">
         <div class="col">
@@ -70,7 +69,6 @@
       </div>
     </div>
 
-    <!-- Assigned Forms Section -->
     <div class="col-md-12 col-lg-8" data-aos="fade-up" data-aos-delay="600">
       <b-card>
         <b-card-header class="border-bottom">
@@ -104,7 +102,6 @@
       </b-card>
     </div>
 
-    <!-- Recent Activity -->
     <div class="col-md-12 col-lg-4" data-aos="fade-up" data-aos-delay="800">
       <b-card>
         <b-card-header class="border-bottom">
@@ -132,7 +129,6 @@
       </b-card>
     </div>
 
-    <!-- Important Information -->
     <div class="col-md-12" data-aos="fade-up" data-aos-delay="1000">
       <b-card>
         <b-card-header class="border-bottom">
@@ -166,73 +162,33 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useMockStore } from '@/store/MockStore.js' // Adjust path if needed
 
 export default {
   setup() {
-    const userProfile = ref({
-      name: 'Patient User',
-      email: 'patient@example.com'
+    // FIXED: Removed unused 'useRouter' call
+    const { getPatientAssignments, assignForm, state } = useMockStore()
+    
+    const userProfile = state.currentUser
+
+    // 1. Auto-assign DSM-5 Level 1 on first load if list is empty
+    onMounted(() => {
+      const myForms = getPatientAssignments(userProfile.id)
+      if (myForms.length === 0) {
+        assignForm(
+          userProfile.id, 
+          'ccsm-level1', 
+          'DSM-5 Level 1 Cross-Cutting', 
+          'Initial broad screening for mental health domains.'
+        )
+      }
     })
 
-    const assignedForms = ref([
-      {
-        name: 'PHQ-9 Depression Screening',
-        description: 'Screen for depression symptoms',
-        status: 'Pending',
-        statusVariant: 'warning',
-        dueDate: '2025-11-25',
-        link: '/dashboard/dsm-hub/phq-9-test'
-      },
-      {
-        name: 'GAD-7 Anxiety Assessment',
-        description: 'Assess anxiety levels',
-        status: 'Completed',
-        statusVariant: 'success',
-        dueDate: '2025-11-20',
-        link: '/dashboard/dsm-hub/gad-7-test'
-      },
-      {
-        name: 'ASRS ADHD Screening',
-        description: 'Screen for ADHD symptoms',
-        status: 'Pending',
-        statusVariant: 'warning',
-        dueDate: '2025-11-28',
-        link: '/dashboard/dsm-hub/asrs-test'
-      },
-      {
-        name: 'PCL-5 PTSD Assessment',
-        description: 'Assess PTSD symptoms',
-        status: 'Overdue',
-        statusVariant: 'danger',
-        dueDate: '2025-11-10',
-        link: '/dashboard/dsm-hub/pcl-5-test'
-      }
-    ])
+    // 2. Reactive list of forms from store
+    const assignedForms = computed(() => getPatientAssignments(userProfile.id))
 
-    const recentActivity = ref([
-      {
-        title: 'GAD-7 form submitted',
-        time: '2 days ago',
-        color: '#4CAF50'
-      },
-      {
-        title: 'PHQ-9 form assigned',
-        time: '5 days ago',
-        color: '#2196F3'
-      },
-      {
-        title: 'Assessment results reviewed',
-        time: '1 week ago',
-        color: '#FFC107'
-      },
-      {
-        title: 'Profile updated',
-        time: '2 weeks ago',
-        color: '#9C27B0'
-      }
-    ])
-
+    // 3. Computed Stats
     const completedForms = computed(() => 
       assignedForms.value.filter(f => f.status === 'Completed').length
     )
@@ -244,6 +200,11 @@ export default {
     const overdueCount = computed(() => 
       assignedForms.value.filter(f => f.status === 'Overdue').length
     )
+    
+    // Static mock data for recent activity visualization
+    const recentActivity = [
+      { title: 'System Initialization', time: 'Just Now', color: '#4CAF50' }
+    ]
 
     return {
       userProfile,

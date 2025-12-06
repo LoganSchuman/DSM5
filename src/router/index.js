@@ -6,6 +6,11 @@ import AsrsTest from '@/views/dsm-hub/AsrsTest.vue'
 import Pcl5Test from '@/views/dsm-hub/Pcl5Test.vue'
 import MdqTest from '@/views/dsm-hub/MdqTest.vue'
 import AuditTest from '@/views/dsm-hub/AuditTest.vue'
+import CrossCuttingLevel1Test from '@/views/dsm-hub/CrossCuttingLevel1Test.vue' 
+
+// --- NEW IMPORTS ---
+import CreateForm from '@/views/dsm-hub/CreateForm.vue'
+import CustomFormRunner from '@/views/dsm-hub/CustomFormRunner.vue'
 
 // Auth Default Routes
 const authChildRoutes = (prefix) => [
@@ -70,6 +75,20 @@ const defaultChildRoutes = (prefix) => [
     meta: { auth: true, name: 'DSM-5 Form Hub', isBanner: true },
     component: DsmHub // Uses the import from the top
   },
+  // --- NEW CUSTOM ROUTES ---
+  {
+    path: 'dsm-hub/create-form',
+    name: prefix + '.create-form',
+    meta: { auth: true, name: 'Create Form', isBanner: true },
+    component: CreateForm
+  },
+  {
+    path: 'dsm-hub/custom/:id', 
+    name: prefix + '.custom-form-runner',
+    meta: { auth: true, name: 'Assessment', isBanner: true },
+    component: CustomFormRunner
+  },
+  // --- EXISTING ROUTES ---
   {
     path: 'dsm-hub/phq-9-test',
     name: prefix + '.phq-9-test',
@@ -105,6 +124,12 @@ const defaultChildRoutes = (prefix) => [
     name: prefix + '.audit-test',
     meta: { auth: true, name: 'AUDIT Test Form', isBanner: true },
     component: AuditTest
+  },
+  {
+    path: 'dsm-hub/ccsm-level1-test',
+    name: prefix + '.ccsm-level1-test',
+    meta: { auth: true, name: 'DSM-5 Level 1', isBanner: true },
+    component: CrossCuttingLevel1Test
   },
   {
     path: 'documentation',
