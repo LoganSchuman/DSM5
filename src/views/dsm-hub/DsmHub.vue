@@ -102,7 +102,25 @@ function handleAssign(patientId) {
   const patient = patients.find(p => p.id === patientId)
   showAssignModal.value = false
 
-  // Use Store action to handle assignment
+  // --- START CUSTOM LOGIC FOR "ME" ---
+  if (patientId === 'USER_ME') {
+    // Create the assignment object
+    const newAssignment = {
+      id: Date.now(),
+      formId: selectedForm.value.id,
+      title: selectedForm.value.title,
+      description: selectedForm.value.description,
+      status: 'Pending',
+      date: new Date().toLocaleDateString()
+    }
+
+    // Save to LocalStorage so the Patient Dashboard can find it
+    const existing = JSON.parse(localStorage.getItem('my_patient_forms')) || []
+    localStorage.setItem('my_patient_forms', JSON.stringify([...existing, newAssignment]))
+  }
+  // --- END CUSTOM LOGIC ---
+
+  // Keep your existing Store logic for other patients
   assignForm(patient.id, selectedForm.value.id, selectedForm.value.title, selectedForm.value.description)
 
   swal.fire({

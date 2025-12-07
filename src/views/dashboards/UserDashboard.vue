@@ -162,18 +162,18 @@
 </template>
 
 <script>
-import { computed, onMounted } from 'vue'
-import { useMockStore } from '@/store/MockStore.js' // Adjust path if needed
+import { computed, onMounted, ref } from 'vue' // Added ref
+import { useMockStore } from '@/store/MockStore.js'
 
 export default {
   setup() {
-    // FIXED: Removed unused 'useRouter' call
     const { getPatientAssignments, assignForm, state } = useMockStore()
     
     const userProfile = state.currentUser
+    const localAssignments = ref([]) // NEW: Store for local storage forms
 
-    // 1. Auto-assign DSM-5 Level 1 on first load if list is empty
     onMounted(() => {
+      // 1. Existing Logic: Auto-assign default form if empty
       const myForms = getPatientAssignments(userProfile.id)
       if (myForms.length === 0) {
         assignForm(
@@ -183,12 +183,34 @@ export default {
           'Initial broad screening for mental health domains.'
         )
       }
+
+      // 2. NEW LOGIC: Load "Assigned" Custom Forms from Browser Memory
+      const storedData = localStorage.getItem('my_patient_forms')
+      if (storedData) {
+        localAssignments.value = JSON.parse(storedData)
+      }
     })
 
-    // 2. Reactive list of forms from store
-    const assignedForms = computed(() => getPatientAssignments(userProfile.id))
+    // 3. Updated Computed Property: Merges Store forms + LocalStorage forms
+    const assignedForms = computed(() => {
+      const storeForms = getPatientAssignments(userProfile.id)
 
-    // 3. Computed Stats
+      // Format the LocalStorage items to match the Dashboard's expected shape
+      const formattedLocalForms = localAssignments.value.map(f => ({
+        id: f.id,
+        name: f.title, // Map 'title' (saved by admin) to 'name' (used by template)
+        description: f.description,
+        status: f.status,
+        statusVariant: f.status === 'Pending' ? 'warning' : 'success',
+        dueDate: f.date || 'No Due Date',
+        // Link to a generic runner for custom forms (adjust route name as needed)
+        link: { name: 'default.custom-form-runner', params: { id: f.formId } }
+      }))
+
+      return [...storeForms, ...formattedLocalForms]
+    })
+
+    // 4. Stats Logic (remains the same)
     const completedForms = computed(() => 
       assignedForms.value.filter(f => f.status === 'Completed').length
     )
@@ -201,7 +223,6 @@ export default {
       assignedForms.value.filter(f => f.status === 'Overdue').length
     )
     
-    // Static mock data for recent activity visualization
     const recentActivity = [
       { title: 'System Initialization', time: 'Just Now', color: '#4CAF50' }
     ]

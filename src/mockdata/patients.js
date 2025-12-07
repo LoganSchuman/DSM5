@@ -29,5 +29,9 @@ export const patients = [
     id: 'p-00888',
     name: 'Emily White',
     email: 'e.white@example.com'
+  },
+  { id: 'USER_ME', 
+    name: 'User', 
+    email: 'fakeemail@gmail.com' 
   }
 ]
