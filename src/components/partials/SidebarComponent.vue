@@ -2,8 +2,23 @@
   <default-sidebar>
     <ul class="navbar-nav iq-main-menu" id="sidebar-menu">
       <side-menu title="Home" :static-item="true"></side-menu>
-      <side-menu isTag="router-link" title="Physician Dashboard" icon="view-grid" :route="{ to: 'default.dashboard' }"></side-menu>
-      <side-menu isTag="router-link" title="Patient Dashboard" icon="user" :route="{ to: 'default.user-dashboard' }"></side-menu>
+      
+      <side-menu 
+        v-if="userRole === 'doctor'" 
+        isTag="router-link" 
+        title="Physician Dashboard" 
+        icon="view-grid" 
+        :route="{ to: 'default.dashboard' }">
+      </side-menu>
+
+      <side-menu 
+        v-if="userRole === 'patient'" 
+        isTag="router-link" 
+        title="Patient Dashboard" 
+        icon="user" 
+        :route="{ to: 'default.user-dashboard' }">
+      </side-menu>
+
       <side-menu isTag="router-link" title="Assessments" icon="file" :route="{ to: 'default.dsm-hub' }"></side-menu>
 
       <side-menu title="Dev Tools" icon="brief-case" toggle-id="dev-tools" :caret-icon="true" :route="{ popup: 'false', to: 'dev-tools' }" @onClick="toggle" :active="devToolsActive">
@@ -97,20 +112,38 @@
           </side-menu>
         </b-collapse>
       </side-menu>
-      </ul>
+    </ul>
   </default-sidebar>
-  </template>
+</template>
 
 <script setup>
 import DefaultSidebar from '@/components/custom/sidebar/DefaultSidebar.vue'
 import SideMenu from '@/components/custom/nav/SideMenu.vue'
-import { ref, computed } from 'vue' // <-- Added computed
+import { ref, computed, onMounted } from 'vue' 
 import { useRoute } from 'vue-router'
+import { supabase } from '@/supabase' // Import Supabase
+
 const currentRoute = ref('')
 const route = useRoute()
+const userRole = ref('') // Reactive variable to store the role
 
-// ## START: New Computed Property ##
-// This checks if the current route is one of the nested dev tool items
+// Fetch the user role on component mount
+onMounted(async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    
+    if (data) {
+      userRole.value = data.role
+    }
+  }
+})
+
+// Dev Tools Logic
 const devToolsActive = computed(() => {
   const routeName = currentRoute.value
   if (!routeName) return false
@@ -129,7 +162,6 @@ const devToolsActive = computed(() => {
     routeName.includes('icons')
   )
 })
-// ## END: New Computed Property ##
 
 const toggle = (route) => {
   if (route === currentRoute.value && route.includes('.')) {

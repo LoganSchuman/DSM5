@@ -6,6 +6,7 @@
 import { onMounted, onUnmounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import '@/plugins/styles'
+
 export default {
   name: 'App',
   setup() {
