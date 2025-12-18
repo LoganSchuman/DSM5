@@ -50,6 +50,7 @@
             </div>
           </div>
         </div>
+
         <div class="col-md-12 col-xl-6">
           <div class="card" data-aos="fade-up" data-aos-delay="1000">
             <div class="card-header d-flex justify-content-between flex-wrap">
@@ -62,6 +63,7 @@
             </div>
           </div>
         </div>
+
         <div class="col-md-12 col-xl-6">
           <div class="card" data-aos="fade-up" data-aos-delay="1200">
             <div class="card-header d-flex justify-content-between flex-wrap">
@@ -91,22 +93,15 @@
               <div class="mb-2 d-flex profile-media align-items-top">
                 <div class="mt-1 profile-dots-pills border-primary"></div>
                 <div class="ms-4">
-                  <h6 class="mb-1">New PHQ-9 result for John S.</h6>
-                  <span class="mb-0">10:15 AM</span>
+                  <h6 class="mb-1">System Live</h6>
+                  <span class="mb-0">Realtime Connection Active</span>
                 </div>
               </div>
               <div class="mb-2 d-flex profile-media align-items-top">
                 <div class="mt-1 profile-dots-pills border-success"></div>
                 <div class="ms-4">
-                  <h6 class="mb-1">GAD-7 assigned to Maria G.</h6>
-                  <span class="mb-0">9:45 AM</span>
-                </div>
-              </div>
-              <div class="mb-2 d-flex profile-media align-items-top">
-                <div class="mt-1 profile-dots-pills border-danger"></div>
-                <div class="ms-4">
-                  <h6 class="mb-1">Follow-up required for Ken L.</h6>
-                  <span class="mb-0">Yesterday</span>
+                  <h6 class="mb-1">Inbox Synced</h6>
+                  <span class="mb-0">Waiting for updates...</span>
                 </div>
               </div>
             </div>
@@ -121,10 +116,10 @@
           <div class="header-title">
             <h4 class="mb-2 card-title">Patient Assessments Inbox</h4>
             <p class="mb-0">
-              Click on a completed assessment to review results and assign follow-ups.
+              Real-time view of forms assigned to your patients.
             </p>
           </div>
-          <button class="btn btn-sm btn-soft-danger" @click="resetDemo">Reset Demo Data</button>
+          <button class="btn btn-sm btn-soft-primary" @click="fetchInbox">Refresh List</button>
         </div>
         <div class="p-0 card-body">
           <div class="mt-4 table-responsive">
@@ -139,34 +134,38 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in inbox" :key="item.id" @click="openReview(item)" :style="item.status === 'Completed' ? 'cursor: pointer' : ''">
+                <tr v-for="item in inbox" :key="item.id">
                   <td>
                     <div class="d-flex align-items-center">
-                      <img class="rounded bg-soft-primary img-fluid avatar-40 me-3" :src="item.avatar" alt="profile" />
+                      <div class="rounded bg-soft-primary d-flex align-items-center justify-content-center me-3" style="width:40px; height:40px;">
+                        <span class="fw-bold">{{ item.patientInitials }}</span>
+                      </div>
                       <div>
                         <h6>{{ item.patientName }}</h6>
-                        <span class="text-secondary">ID: {{ item.patientId }}</span>
+                        <span class="text-secondary small">ID: ...{{ item.patientId.slice(-4) }}</span>
                       </div>
                     </div>
                   </td>
                   <td>
-                     <span class="fw-bold">{{ item.name }}</span>
+                     <span class="fw-bold">{{ item.form_title }}</span>
                   </td>
                   <td>
-                    <span v-if="item.scoreSummary" class="text-dark fw-bold">{{ item.scoreSummary }}</span>
+                    <span v-if="item.status === 'Completed'" class="fw-bold text-dark">{{ item.score }} / 27</span>
                     <span v-else class="text-muted">-</span>
                   </td>
                   <td>
-                     <span :class="`badge bg-${item.statusVariant}`">{{ item.status }}</span>
+                     <span :class="`badge ${item.status === 'Completed' ? 'bg-success' : 'bg-warning'}`">
+                       {{ item.status }}
+                     </span>
                   </td>
                   <td>
-                    <button v-if="item.status === 'Completed'" class="btn btn-primary btn-sm">Review</button>
+                    <button v-if="item.status === 'Completed'" class="btn btn-primary btn-sm" @click="handleReview(item)">Review</button>
                     <button v-else class="btn btn-soft-secondary btn-sm" disabled>Waiting...</button>
                   </td>
                 </tr>
                 <tr v-if="inbox.length === 0">
                     <td colspan="5" class="text-center py-4">
-                        <div class="text-muted">No assessments found. The patient has not started the initial screening.</div>
+                        <div class="text-muted">No assignments found. Go to 'Assessments' to assign a form.</div>
                     </td>
                 </tr>
               </tbody>
@@ -176,81 +175,27 @@
       </div>
     </div>
 
-    <b-modal 
-      v-model="showReviewModal" 
-      title="Assessment Review" 
-      size="lg" 
-      hide-footer
-      content-class="bg-white"
-      @hidden="cleanupModal"
-    >
-      <div v-if="selectedItem">
-        <div class="d-flex justify-content-between align-items-center bg-soft-primary p-3 rounded mb-4">
-           <div class="d-flex align-items-center">
-             <div class="me-3">
-               <h5 class="mb-1">{{ selectedItem.name }} Results</h5>
-               <p class="mb-0 text-primary">{{ selectedItem.scoreSummary }}</p>
-             </div>
-           </div>
-           <button class="btn btn-outline-primary btn-sm" @click="viewAnswers(selectedItem)">
-              View Patient Answers
-           </button>
-        </div>
+    <PatientActionModal 
+      :isOpen="showModal" 
+      :patient="selectedPatient" 
+      :submission="selectedSubmission" 
+      @close="showModal = false"
+      @assignment-success="handleAssignmentSuccess"
+    />
 
-        <h5 class="mt-4">AI Recommendations</h5>
-        <p class="text-muted">Based on the patient's answers, the following actions are recommended:</p>
-        
-        <div class="row g-3">
-            <div class="col-md-12" v-for="(rec, idx) in selectedItem.recommendations" :key="idx">
-                <div class="card border-primary border shadow-none mb-0">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="text-primary mb-1">{{ rec.name }}</h6>
-                            <p class="mb-0 text-dark small">{{ rec.reason }}</p>
-                        </div>
-                        <button 
-                            v-if="rec.formId !== 'none' && rec.formId !== 'consult'" 
-                            class="btn btn-primary btn-sm"
-                            @click="assignRecommended(rec)"
-                        >
-                            Assign {{ rec.name }} Now
-                        </button>
-                        <button 
-                            v-else-if="rec.formId === 'consult'"
-                            class="btn btn-warning btn-sm"
-                        >
-                            Book Consult
-                        </button>
-                        <span v-else class="badge bg-success">Complete</span>
-                    </div>
-                </div>
-            </div>
-             <div v-if="!selectedItem.recommendations || selectedItem.recommendations.length === 0">
-                <p>No specific automated recommendations generated.</p>
-            </div>
-        </div>
-
-        <hr class="my-4">
-        
-        <div class="d-flex justify-content-end gap-2">
-            <button class="btn btn-secondary" @click="showReviewModal = false">Close</button>
-            <button class="btn btn-outline-primary" @click="$router.push({name: 'default.dsm-hub'})">Browse Form Library</button>
-        </div>
-      </div>
-    </b-modal>
   </div>
 </template>
 
 <script>
-// IMPORT onBeforeUnmount
-import { onMounted, onBeforeUnmount, ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+// 1. Added 'inject' to imports
+import { onMounted, onBeforeUnmount, ref, inject } from 'vue'
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import AOS from 'aos'
-import Swal from 'sweetalert2'
-import { useMockStore } from '@/store/MockStore.js' 
+import { supabase } from '@/supabase' 
+import PatientActionModal from '@/components/PatientActionModal.vue'
 
+// Styles needed for Swiper
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -258,72 +203,130 @@ export default {
   components: {
     Swiper,
     SwiperSlide,
+    PatientActionModal
   },
   setup() {
     const modules = [Navigation]
-    const router = useRouter()
-    
-    // --- STORE INTEGRATION ---
-    const { getAllPatientActivity, assignForm, resetDemo } = useMockStore()
-    const inbox = computed(() => getAllPatientActivity())
-    
-    // 2. Modal Logic
-    const showReviewModal = ref(false)
-    const selectedItem = ref(null)
+    const inbox = ref([])
+    let realtimeChannel = null
 
-    const openReview = (item) => {
-        if (item.status !== 'Completed') return
-        selectedItem.value = item
-        showReviewModal.value = true
-    }
+    // 2. Inject SweetAlert
+    const swal = inject('$swal')
 
-    // NUCLEAR OPTION CLEANUP
-    // This force-removes the scroll lock and backdrops
-    const cleanupModal = () => {
-        // Reset local state
-        selectedItem.value = null
+    // Modal State
+    const showModal = ref(false)
+    const selectedPatient = ref(null)
+    const selectedSubmission = ref(null)
+
+    // --- 1. Fetch Inbox Data ---
+    const fetchInbox = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: assignments, error } = await supabase
+        .from('assignments')
+        .select('*')
+        .eq('doctor_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error || !assignments) return
+
+      // Get Patient Names
+      const patientIds = [...new Set(assignments.map(a => a.patient_id))]
+      let profilesMap = {}
+      
+      if (patientIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name') 
+          .in('id', patientIds)
         
-        // Force cleanup of DOM
-        setTimeout(() => {
-            document.body.classList.remove('modal-open')
-            document.body.style.overflow = ''
-            document.body.style.paddingRight = ''
-            
-            // Remove any stuck backdrops
-            const backdrops = document.querySelectorAll('.modal-backdrop')
-            backdrops.forEach(el => el.remove())
-        }, 150)
+        if (profiles) {
+            profiles.forEach(p => {
+              profilesMap[p.id] = p.full_name || 'Patient'
+            })
+        }
+      }
+
+      inbox.value = assignments.map(a => ({
+        ...a,
+        patientName: profilesMap[a.patient_id] || 'Unknown Patient',
+        patientInitials: (profilesMap[a.patient_id] || 'U').substring(0,2).toUpperCase(),
+        patientId: a.patient_id
+      }))
     }
 
-    // Call cleanup when leaving the page (Crucial for router navigation)
-    onBeforeUnmount(() => {
-        cleanupModal()
+    // --- 2. Handle Review Click (Using Modal) ---
+    const handleReview = (item) => {
+      selectedPatient.value = {
+        name: item.patientName,
+        id: item.patientId
+      }
+
+      const mockData = { 
+        q1: 2, q2: 3, q3: 1, 
+        q4: 0, q5: 0, 
+        q6: 0, q7: 0, q8: 0,
+        q11: 0 
+      }
+
+      selectedSubmission.value = {
+        formId: 'level-1-adult', 
+        formName: item.form_title || 'Level 1 Cross-Cutting Symptom Measure',
+        score: item.score,
+        data: (item.data && Object.keys(item.data).length > 0) ? item.data : mockData
+      }
+
+      console.log("Opening Modal with:", selectedSubmission.value) 
+      showModal.value = true
+    }
+
+    // --- NEW: Handle Success Toast ---
+    const handleAssignmentSuccess = () => {
+      swal.fire({
+        title: 'Sent!',
+        text: 'The follow-up form has been sent successfully.',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      })
+      
+      // Also refresh the inbox so the new status shows up immediately
+      fetchInbox()
+    }
+
+    // --- 3. Realtime Listener ---
+    const setupRealtime = () => {
+      realtimeChannel = supabase
+        .channel('public:assignments')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, () => {
+          console.log("Change detected! Refreshing inbox...")
+          fetchInbox()
+        })
+        .subscribe()
+    }
+
+    onMounted(() => {
+      AOS.init({
+        disable: function () {
+          var maxWidth = 996
+          return window.innerWidth < maxWidth
+        },
+        once: true,
+        duration: 800
+      })
+      
+      fetchInbox()
+      setupRealtime()
     })
 
-    const viewAnswers = (item) => {
-        // Close modal first
-        showReviewModal.value = false
-        // Then navigate
-        router.push(item.link)
-    }
+    onBeforeUnmount(() => {
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+    })
 
-    const assignRecommended = (rec) => {
-        assignForm('p1', rec.formId, rec.name, `Follow-up based on results from ${selectedItem.value.name}`)
-        showReviewModal.value = false
-        
-        // Wait for cleanup before showing SweetAlert
-        setTimeout(() => {
-            Swal.fire({
-                icon: 'success',
-                title: 'Assigned!',
-                text: `${rec.name} has been assigned to the patient dashboard.`,
-                timer: 2000,
-                showConfirmButton: false
-            })
-        }, 400)
-    }
-
-    // --- STATIC CHART DATA ---
+    // --- 4. Restored Static Chart Data ---
     const kpiCards = ref([
       { title: 'Pending Assessments', value: '72' },
       { title: 'Completed Today', value: '14' },
@@ -384,27 +387,11 @@ export default {
         }
     });
 
-    onMounted(() => {
-      AOS.init({
-        disable: function () {
-          var maxWidth = 996
-          return window.innerWidth < maxWidth
-        },
-        once: true,
-        duration: 800
-      })
-    })
-
     return { 
         modules, kpiCards, activityChart, statusChart, riskChart, 
-        inbox, 
-        openReview, 
-        showReviewModal, 
-        selectedItem, 
-        assignRecommended, 
-        resetDemo,
-        viewAnswers, // New helper
-        cleanupModal // Return cleanup
+        inbox, fetchInbox, handleReview,
+        showModal, selectedPatient, selectedSubmission,
+        handleAssignmentSuccess // Return the new function
     }
   }
 }
@@ -414,8 +401,5 @@ export default {
 .modal-content {
     background-color: #fff !important;
     z-index: 1055 !important;
-}
-.modal-backdrop {
-    z-index: 1045 !important;
 }
 </style>

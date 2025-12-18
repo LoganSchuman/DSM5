@@ -11,7 +11,8 @@ const SYSTEM_FORMS = [
   { id: 'pcl-5', title: 'PCL-5', fullName: 'PTSD Checklist for DSM-5', description: 'A 20-item self-report measure that assesses PTSD symptoms.', type: 'system' },
   { id: 'mdq', title: 'MDQ', fullName: 'Mood Disorder Questionnaire', description: 'A screening tool for bipolar I disorder.', type: 'system' },
   { id: 'audit', title: 'AUDIT', fullName: 'Alcohol Use Disorders ID Test', description: 'A 10-item screening tool to assess alcohol consumption.', type: 'system' },
-  { id: 'ccsm-level1', title: 'DSM-5 Level 1', fullName: 'DSM-5 Level 1 Cross-Cutting', description: 'A 23-item measure assessing mental health domains.', type: 'system' }
+  { id: 'ccsm-level1', title: 'DSM-5 Level 1', fullName: 'DSM-5 Level 1 Cross-Cutting', description: 'A 23-item measure assessing mental health domains.', type: 'system' },
+  { id: 'level-2-depression', title: 'Level 2: Depression', fullName: 'Level 2: Depression (PHQ-9)', description: 'Detailed assessment for depression severity.', type: 'system' },
 ]
 
 const defaultState = {

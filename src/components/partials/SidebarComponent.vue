@@ -19,7 +19,13 @@
         :route="{ to: 'default.user-dashboard' }">
       </side-menu>
 
-      <side-menu isTag="router-link" title="Assessments" icon="file" :route="{ to: 'default.dsm-hub' }"></side-menu>
+      <side-menu 
+        v-if="userRole === 'doctor'" 
+        isTag="router-link" 
+        title="Assessments" 
+        icon="file" 
+        :route="{ to: 'default.dsm-hub' }">
+      </side-menu>
 
       <side-menu title="Dev Tools" icon="brief-case" toggle-id="dev-tools" :caret-icon="true" :route="{ popup: 'false', to: 'dev-tools' }" @onClick="toggle" :active="devToolsActive">
         <b-collapse tag="ul" class="sub-nav" id="dev-tools" accordion="sidebar-menu" :visible="devToolsActive">
@@ -121,39 +127,46 @@ import DefaultSidebar from '@/components/custom/sidebar/DefaultSidebar.vue'
 import SideMenu from '@/components/custom/nav/SideMenu.vue'
 import { ref, computed, onMounted } from 'vue' 
 import { useRoute } from 'vue-router'
-import { supabase } from '@/supabase' // Import Supabase
+import { supabase } from '@/supabase' 
 
 const currentRoute = ref('')
 const route = useRoute()
-const userRole = ref('') // Reactive variable to store the role
+const userRole = ref('') 
 
-// Fetch the user role on component mount
 onMounted(async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    const { data } = await supabase
+  // 1. Get the session safely
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (session?.user) {
+    // 2. Try to fetch the profile
+    const { data, error } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single()
     
+    // 3. Only assign if we actually got data (Prevents the crash)
     if (data) {
       userRole.value = data.role
+    } else if (error) {
+      console.error("Error fetching role:", error.message)
     }
   }
 })
 
-// Dev Tools Logic
+// The computed "devToolsActive" logic
 const devToolsActive = computed(() => {
   const routeName = currentRoute.value
   if (!routeName) return false
+  if (routeName.includes('user-dashboard')) return false // Fix for auto-expand
+
   return (
     routeName.includes('dev-tools') ||
     routeName.includes('menu-style') ||
     routeName.includes('design-system') ||
     routeName.includes('special-pages') ||
     routeName.includes('auth') ||
-    routeName.includes('user') ||
+    (routeName.includes('user') && !routeName.includes('user-dashboard')) ||
     routeName.includes('errors') ||
     routeName.includes('widget') ||
     routeName.includes('maps') ||

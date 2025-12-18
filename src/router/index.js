@@ -7,6 +7,7 @@ import Pcl5Test from '@/views/dsm-hub/Pcl5Test.vue'
 import MdqTest from '@/views/dsm-hub/MdqTest.vue'
 import AuditTest from '@/views/dsm-hub/AuditTest.vue'
 import CrossCuttingLevel1Test from '@/views/dsm-hub/CrossCuttingLevel1Test.vue' 
+import UniversalFormRunner from '@/views/auth/default/UniversalFormRunner.vue'
 
 // --- NEW IMPORTS ---
 import CreateForm from '@/views/dsm-hub/CreateForm.vue'
@@ -382,7 +383,14 @@ const routes = [
     name: 'errors',
     component: () => import('../layouts/guest/BlankLayout.vue'),
     children: errorRoutes('errors')
-  }
+  },
+  {
+  // This :formId part is a variable. It matches 'phq-9', 'gad-7', etc.
+  path: '/assessment/:formId',
+  name: 'default.assessment',
+  component: UniversalFormRunner,
+  props: true
+}
 ]
 
 const router = createRouter({

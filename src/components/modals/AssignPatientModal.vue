@@ -17,7 +17,7 @@
         <b-form-input
           id="patient-search"
           v-model="searchQuery"
-          placeholder="Start typing a name or email..."
+          placeholder="Start typing a name..."
           class="mb-3"
         ></b-form-input>
       </b-form-group>
@@ -41,11 +41,17 @@
 
 <script setup>
 import { ref, computed, defineProps, defineEmits } from 'vue'
-import { patients } from '../../mockdata/patients.js' 
+
+// 1. We removed the import { patients } from mockdata
 
 const props = defineProps({
   modelValue: Boolean,
-  form: Object
+  form: Object,
+  // 2. Added 'patients' prop to accept real data from DsmHub
+  patients: {
+    type: Array,
+    default: () => []
+  }
 })
 
 const emit = defineEmits(['update:modelValue', 'assign'])
@@ -59,19 +65,22 @@ const show = computed({
 })
 
 const filteredPatients = computed(() => {
+  // Use props.patients instead of the imported list
   if (!searchQuery.value) {
-    return patients
+    return props.patients
   }
   const lowerCaseQuery = searchQuery.value.toLowerCase() 
-  return patients.filter(p =>
-    p.name.toLowerCase().includes(lowerCaseQuery) ||
-    p.email.toLowerCase().includes(lowerCaseQuery)
+  
+  return props.patients.filter(p =>
+    (p.name && p.name.toLowerCase().includes(lowerCaseQuery)) ||
+    (p.email && p.email.toLowerCase().includes(lowerCaseQuery))
   )
 })
 
 const patientOptions = computed(() => {
   return filteredPatients.value.map(patient => ({
-    text: `${patient.name} (${patient.email})`,
+    // Handle cases where email might be missing in the profile
+    text: patient.email ? `${patient.name} (${patient.email})` : patient.name,
     value: patient.id
   }))
 })

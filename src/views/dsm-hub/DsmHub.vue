@@ -61,25 +61,58 @@
   <AssignPatientModal 
     v-model="showAssignModal" 
     :form="selectedForm" 
+    :patients="realPatients"
     @assign="handleAssign" 
   />
 </template>
 
 <script setup>
-import { ref, computed, inject } from 'vue' 
+import { ref, computed, inject, onMounted } from 'vue' 
+import { supabase } from '@/supabase'
 import AssignPatientModal from '@/components/modals/AssignPatientModal.vue'
-import { patients } from '../../mockdata/patients.js' 
-import { useMockStore } from '@/store/MockStore.js' // Import Store
+import { useMockStore } from '@/store/MockStore.js' 
 
 const swal = inject('$swal')
-// Get forms and assign action from store
-const { getLibraryForms, assignForm } = useMockStore()
+const { getLibraryForms } = useMockStore()
 
 const showAssignModal = ref(false)
 const selectedForm = ref(null)
 const searchQuery = ref('')
+const realPatients = ref([]) 
 
-// Computed property to get latest list (System + Custom)
+// 1. Fetch Real Patients (FIXED QUERY)
+const fetchPatients = async () => {
+  // We removed 'first_name', 'last_name', and 'email' because they caused the crash.
+  // We only ask for what we know exists: id, full_name, and role.
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, role')
+    .eq('role', 'patient') 
+  
+  if (error) {
+    console.error('Error fetching patients:', error)
+  } else if (data) {
+    console.log("Profiles loaded:", data)
+
+    realPatients.value = data.map(p => ({
+      id: p.id,
+      // Fallback: Use full_name if it exists, otherwise generic "Patient"
+      name: p.full_name || 'Patient (No Name)',
+      // Note: 'email' is usually not in the profiles table, so we leave it blank to prevent errors
+      email: '' 
+    }))
+  }
+}
+
+// 2. Init
+onMounted(async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    // We removed the router check to fix the unused variable error.
+    fetchPatients()
+  }
+})
+
 const allForms = computed(() => getLibraryForms())
 
 const filteredForms = computed(() => {
@@ -98,40 +131,44 @@ function openAssignModal(form) {
   showAssignModal.value = true
 }
 
-function handleAssign(patientId) {
-  const patient = patients.find(p => p.id === patientId)
+// 3. Assign Logic
+async function handleAssign(patientId) {
+  const patient = realPatients.value.find(p => p.id === patientId)
   showAssignModal.value = false
 
-  // --- START CUSTOM LOGIC FOR "ME" ---
-  if (patientId === 'USER_ME') {
-    // Create the assignment object
-    const newAssignment = {
-      id: Date.now(),
-      formId: selectedForm.value.id,
-      title: selectedForm.value.title,
-      description: selectedForm.value.description,
-      status: 'Pending',
-      date: new Date().toLocaleDateString()
-    }
+  const { data: { user } } = await supabase.auth.getUser()
 
-    // Save to LocalStorage so the Patient Dashboard can find it
-    const existing = JSON.parse(localStorage.getItem('my_patient_forms')) || []
-    localStorage.setItem('my_patient_forms', JSON.stringify([...existing, newAssignment]))
+  if (!user) {
+    swal.fire('Error', 'You must be logged in.', 'error')
+    return
   }
-  // --- END CUSTOM LOGIC ---
 
-  // Keep your existing Store logic for other patients
-  assignForm(patient.id, selectedForm.value.id, selectedForm.value.title, selectedForm.value.description)
+  try {
+    const { error } = await supabase.from('assignments').insert({
+      doctor_id: user.id,
+      patient_id: patientId,
+      form_id: selectedForm.value.id,
+      form_title: selectedForm.value.title,
+      form_description: selectedForm.value.description,
+      status: 'Pending'
+    })
 
-  swal.fire({
-    title: 'Assignment Successful!',
-    text: `Successfully assigned ${selectedForm.value.title} to ${patient.name}.`,
-    icon: 'success',
-    timer: 2000,
-    showConfirmButton: false,
-    toast: true,
-    position: 'top-end'
-  })
+    if (error) throw error
+
+    swal.fire({
+      title: 'Assignment Successful!',
+      text: `Successfully assigned ${selectedForm.value.title} to ${patient.name}.`,
+      icon: 'success',
+      timer: 2000,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end'
+    })
+  } catch (err) {
+    console.error('Assignment Error:', err)
+    swal.fire('Error', 'Failed to assign form. ' + err.message, 'error')
+  }
+  
   selectedForm.value = null
 }
 </script>

@@ -1,12 +1,10 @@
 <template>
   <section class="login-content auth-signin-page">
     <b-row class="m-0 align-items-center h-100">
-      <!-- Left Side - Login Form -->
       <b-col md="6" class="p-0 login-left">
         <div class="login-form-wrapper">
           <b-row class="justify-content-center h-100">
             <b-col md="10" class="d-flex flex-column justify-content-center">
-              <!-- Logo Section -->
               <div class="mb-5 text-center logo-section">
                 <router-link :to="{ name: 'auth.login' }" class="navbar-brand d-flex align-items-center justify-content-center mb-3">
                   <brand-logo></brand-logo>
@@ -14,29 +12,23 @@
                 </router-link>
               </div>
 
-              <!-- Form Card -->
               <b-card class="auth-signin-card shadow-lg border-0">
                 <b-card-body class="p-5">
-                  <!-- Header -->
                   <div class="text-center mb-4">
                     <h1 class="h2 fw-bold text-dark mb-2">Welcome Back</h1>
                     <p class="text-muted small">Sign in to access your medical dashboard</p>
                   </div>
 
-                  <!-- Error Message -->
                   <b-alert v-if="errorMessage" variant="danger" class="mb-4" dismissible @dismissed="errorMessage = ''">
                     <strong>Login Error:</strong> {{ errorMessage }}
                   </b-alert>
 
-                  <!-- Loading State -->
                   <div v-if="isLoading" class="text-center py-4">
                     <b-spinner variant="primary" class="me-2"></b-spinner>
                     <span class="text-muted">Authenticating...</span>
                   </div>
 
-                  <!-- Login Form -->
                   <form v-else @submit.prevent="handleSignIn" class="login-form">
-                    <!-- Email Field -->
                     <div class="mb-4">
                       <label for="email" class="form-label fw-semibold text-dark">Email Address</label>
                       <div class="input-group">
@@ -55,7 +47,6 @@
                       </div>
                     </div>
 
-                    <!-- Password Field -->
                     <div class="mb-4">
                       <label for="password" class="form-label fw-semibold text-dark">Password</label>
                       <div class="input-group">
@@ -74,18 +65,12 @@
                       </div>
                     </div>
 
-                    <!-- Remember & Forgot Password -->
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                      <div class="form-check">
-                        <input v-model="rememberMe" type="checkbox" class="form-check-input" id="rememberCheck" />
-                        <label class="form-check-label small" for="rememberCheck">Remember me</label>
-                      </div>
+                    <div class="d-flex justify-content-end align-items-center mb-4">
                       <router-link :to="{ name: 'auth.reset-password' }" class="small text-primary text-decoration-none fw-semibold">
                         Forgot Password?
                       </router-link>
                     </div>
 
-                    <!-- Submit Button -->
                     <button
                       type="submit"
                       class="btn btn-primary w-100 py-2 fw-semibold mb-3"
@@ -98,24 +83,6 @@
                     </button>
                   </form>
 
-                  <!-- Social Login Options -->
-                  <div class="divider-with-text mb-4">
-                    <span>Or continue with</span>
-                  </div>
-
-                  <div class="d-flex gap-2 mb-4">
-                    <button type="button" class="btn btn-outline-secondary flex-fill py-2">
-                      <i class="fab fa-google"></i>
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary flex-fill py-2">
-                      <i class="fab fa-facebook"></i>
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary flex-fill py-2">
-                      <i class="fab fa-apple"></i>
-                    </button>
-                  </div>
-
-                  <!-- Sign Up Link -->
                   <p class="text-center text-muted small mb-0">
                     Don't have an account?
                     <router-link :to="{ name: 'auth.register' }" class="text-primary fw-semibold text-decoration-none">
@@ -125,7 +92,6 @@
                 </b-card-body>
               </b-card>
 
-              <!-- Decorative Elements -->
               <div class="sign-bg">
                 <svg width="280" height="230" viewBox="0 0 431 398" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <g opacity="0.05">
@@ -141,7 +107,6 @@
         </div>
       </b-col>
 
-      <!-- Right Side - Hero Image -->
       <b-col md="6" class="d-md-block d-none login-right p-0">
         <div class="hero-image-wrapper">
           <div class="gradient-overlay"></div>
@@ -160,18 +125,16 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
+import Swal from 'sweetalert2' // 1. Import SweetAlert
 
 const router = useRouter()
 
 const email = ref('')
 const password = ref('')
-const rememberMe = ref(false)
 const isLoading = ref(false)
-const errorMessage = ref('')
+// const errorMessage = ref('') // You can remove this since we are using Swal now
 
 const handleSignIn = async () => {
-  // Reset error message
-  errorMessage.value = ''
   isLoading.value = true
 
   try {
@@ -182,7 +145,18 @@ const handleSignIn = async () => {
     })
 
     if (signInError) {
-      errorMessage.value = signInError.message || 'Failed to sign in. Please try again.'
+      // 2. TRIGGER ERROR TOAST
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: 'Incorrect email or password.', // Custom message is usually better than raw error
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      })
+      
       isLoading.value = false
       return
     }
@@ -196,46 +170,46 @@ const handleSignIn = async () => {
         .single()
 
       if (profileError) {
-        console.error('Error fetching user profile:', profileError)
-        errorMessage.value = 'Unable to load user profile. Please try again.'
+        Swal.fire({
+          icon: 'error',
+          title: 'Profile Error',
+          text: 'Unable to load user profile.',
+        })
         isLoading.value = false
         return
       }
 
-      // Store user preference if remember me is checked
-      if (rememberMe.value) {
-        localStorage.setItem('rememberEmail', email.value)
-      } else {
-        localStorage.removeItem('rememberEmail')
-      }
+      // 3. OPTIONAL: Success Toast before redirecting
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 1500,
+        timerProgressBar: true,
+      })
+      
+      await Toast.fire({
+        icon: 'success',
+        title: 'Signed in successfully'
+      })
 
       // Redirect based on user role
       if (profileData && profileData.role === 'doctor') {
-        // Redirect doctor to their dashboard (DSM-5 Hub / Patient Management)
-        router.push({ name: 'default.dsm-hub' })
+        router.push({ name: 'default.dashboard' })
       } else {
-        // Redirect patient to their dashboard
         router.push({ name: 'default.user-dashboard' })
       }
     }
   } catch (error) {
     console.error('Sign in error:', error)
-    errorMessage.value = error.message || 'An unexpected error occurred. Please try again.'
+    Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An unexpected error occurred.',
+    })
     isLoading.value = false
   }
 }
-
-// Load remembered email if available
-const loadRememberedEmail = () => {
-  const rememberedEmail = localStorage.getItem('rememberEmail')
-  if (rememberedEmail) {
-    email.value = rememberedEmail
-    rememberMe.value = true
-  }
-}
-
-// Load on component mount
-loadRememberedEmail()
 </script>
 
 <style lang="scss" scoped>
@@ -362,11 +336,6 @@ loadRememberedEmail()
         }
       }
     }
-
-    .form-check-label {
-      color: #718096;
-      font-weight: 500;
-    }
   }
 
   .btn-primary {
@@ -384,44 +353,6 @@ loadRememberedEmail()
     &:disabled {
       opacity: 0.7;
       cursor: not-allowed;
-    }
-  }
-
-  .btn-outline-secondary {
-    border-color: #cbd5e0;
-    color: #4a5568;
-    border-radius: 0.5rem;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: #f7fafc;
-      border-color: #a0aec0;
-      transform: translateY(-2px);
-    }
-
-    i {
-      font-size: 1.1rem;
-    }
-  }
-
-  .divider-with-text {
-    display: flex;
-    align-items: center;
-    color: #a0aec0;
-    font-size: 0.85rem;
-    font-weight: 500;
-
-    &::before,
-    &::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: #e2e8f0;
-    }
-
-    span {
-      padding: 0 1rem;
-      color: #718096;
     }
   }
 
