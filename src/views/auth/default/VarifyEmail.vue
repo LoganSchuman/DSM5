@@ -5,7 +5,6 @@
         <b-card class="card-transparent auth-card shadow-none d-flex justify-content-center mb-0">
           <router-link :to="{ name: 'default.dashboard' }" class="navbar-brand d-flex align-items-center mb-3 text-primary">
             <brand-logo></brand-logo>
-            <h4 class="logo-title ms-3 mb-0"><brand-name></brand-name></h4>
           </router-link>
           <h2 class="mt-3 mb-0">Success !</h2>
           <p class="cnf-mail mb-1">A email has been send to youremail@domain.com. Please check for an email from company and click on the included link to reset your password.</p>

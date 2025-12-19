@@ -8,7 +8,6 @@
               <div class="mb-5 text-center logo-section">
                 <router-link :to="{ name: 'auth.login' }" class="navbar-brand d-flex align-items-center justify-content-center mb-3">
                   <brand-logo></brand-logo>
-                  <h4 class="logo-title ms-3 mb-0 text-primary fw-bold" data-setting="app_name"><brand-name></brand-name></h4>
                 </router-link>
               </div>
 

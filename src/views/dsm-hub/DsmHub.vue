@@ -38,14 +38,16 @@
                   <p class="card-text">{{ form.description }}</p>
                 </div>
                 <div class="card-footer bg-transparent border-0 d-flex justify-content-end">
-                  <router-link 
-                    v-if="form.type === 'system'" 
-                    :to="{ name: `default.${form.id}-test` }" 
-                    class="btn btn-soft-secondary btn-sm me-2">
-                    View Details
-                  </router-link>
+                  <div class="card-footer bg-transparent border-0 d-flex justify-content-end">
+                    <button 
+                      v-if="form.type === 'system'" 
+                      class="btn btn-soft-secondary btn-sm me-2"
+                      @click="openPreview(form)">
+                      View Details
+                    </button>  
+                    <button class="btn btn-primary btn-sm" @click="openAssignModal(form)">Assign to Patient</button>
+                  </div>
                   
-                  <button class="btn btn-primary btn-sm" @click="openAssignModal(form)">Assign to Patient</button>
                 </div>
               </div>
             </div>
@@ -64,6 +66,11 @@
     :patients="realPatients"
     @assign="handleAssign" 
   />
+  <FormPreviewModal 
+  :isOpen="showPreviewModal" 
+  :form="previewForm" 
+  @close="showPreviewModal = false" 
+/>
 </template>
 
 <script setup>
@@ -71,6 +78,7 @@ import { ref, computed, inject, onMounted } from 'vue'
 import { supabase } from '@/supabase'
 import AssignPatientModal from '@/components/modals/AssignPatientModal.vue'
 import { useMockStore } from '@/store/MockStore.js' 
+import FormPreviewModal from '@/components/modals/FormPreviewModal.vue'
 
 const swal = inject('$swal')
 const { getLibraryForms } = useMockStore()
@@ -79,6 +87,13 @@ const showAssignModal = ref(false)
 const selectedForm = ref(null)
 const searchQuery = ref('')
 const realPatients = ref([]) 
+const showPreviewModal = ref(false)
+const previewForm = ref(null)
+
+const openPreview = (form) => {
+  previewForm.value = form
+  showPreviewModal.value = true
+}
 
 // 1. Fetch Real Patients (FIXED QUERY)
 const fetchPatients = async () => {

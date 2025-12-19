@@ -157,10 +157,10 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/supabase'
-import AOS from 'aos' // <-- CRITICAL FIX
+import AOS from 'aos'
 
 const router = useRouter()
 const assignedForms = ref([])
@@ -195,10 +195,10 @@ const fetchAssignments = async () => {
     console.error("Error:", err)
   } finally {
     loadingForms.value = false
+    nextTick(() => { AOS.refresh() })
   }
 }
 
-// Realtime Listener
 const setupRealtime = async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
@@ -213,28 +213,38 @@ const setupRealtime = async () => {
         table: 'assignments',
         filter: `patient_id=eq.${user.id}` 
       }, 
-      (payload) => {
-        console.log("New assignment received!", payload)
+      () => {
         fetchAssignments() 
       }
     )
     .subscribe()
 }
 
-// Handle Form Navigation
+// FIX: Improved routing to include 'mode'
 const startForm = (form) => {
-  // We now direct EVERY form to the universal runner
-  // form.formId will be something like 'phq-9', 'gad-7', 'pcl-5', etc.
-  
-  router.push({ 
-    name: 'default.assessment', 
-    params: { formId: form.formId },
-    query: { assignmentId: form.id } 
-  })
+  const queryParams = { 
+    assignmentId: form.id,
+    mode: form.status === 'Completed' ? 'review' : 'edit' 
+  }
+
+  // If the form ID starts with 'custom-', it goes to the Custom Runner
+  if (form.formId && form.formId.startsWith('custom-')) {
+    router.push({ 
+      name: 'default.custom-form-runner', 
+      params: { id: form.formId },
+      query: queryParams
+    })
+  } else {
+    // Otherwise it goes to the Standard Runner
+    router.push({ 
+      name: 'default.assessment', 
+      params: { formId: form.formId },
+      query: queryParams 
+    })
+  }
 }
 
 onMounted(() => {
-  // CRITICAL FIX: Re-enable animations or items stay hidden
   AOS.init({
     disable: function () {
       var maxWidth = 996

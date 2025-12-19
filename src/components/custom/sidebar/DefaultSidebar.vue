@@ -1,7 +1,11 @@
 <template>
   <aside id="first-tour" :class="`sidebar sidebar-base ${sidebarColor} ${sidebarMenuStyle} ${sidebarType.join(' ')}`" data-toggle="main-sidebar" data-sidebar="responsive">
     <div class="sidebar-header d-flex align-items-center justify-content-start">
-      <img src="@/assets/images/logo.png" alt="Logo" style="max-width: 50%; height: auto; object-fit: contain; padding: 5px;" />
+      <img 
+  src="@/assets/images/MediFlow_Logo.png" 
+  alt="Logo" 
+  style="width: 180px; height: auto; object-fit: contain; padding: 5px;" 
+/>
       <div class="sidebar-toggle" @click="toggleSidebar">
         <i class="icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

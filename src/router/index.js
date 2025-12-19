@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { supabase } from '@/supabase'
 import DsmHub from '@/views/dsm-hub/DsmHub.vue'
 import Phq9Test from '@/views/dsm-hub/Phq9Test.vue'
 import Gad7Test from '@/views/dsm-hub/Gad7Test.vue'
@@ -131,6 +132,13 @@ const defaultChildRoutes = (prefix) => [
     name: prefix + '.ccsm-level1-test',
     meta: { auth: true, name: 'DSM-5 Level 1', isBanner: true },
     component: CrossCuttingLevel1Test
+  },
+  {
+    path: 'dsm-hub/level-2-depression-test',
+    name: prefix + '.level-2-depression-test', // This matches what DsmHub is looking for
+    meta: { auth: true, name: 'Level 2 Depression', isBanner: true },
+    component: UniversalFormRunner, // Reuse your universal runner
+    props: { formId: 'level-2-depression' } // ⚠️ IMPORTANT: Pass the ID explicitly
   },
   {
     path: 'documentation',
@@ -409,6 +417,26 @@ const router = createRouter({
     return { top: 0, left: 0 }
   }
 
+})
+
+router.beforeEach(async (to, from, next) => {
+  // Check if the route has the "meta: { auth: true }" flag
+  const requiresAuth = to.matched.some(record => record.meta.auth)
+  
+  // Check if there is an active Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Logic:
+  if (requiresAuth && !session) {
+    // If page needs auth but user is NOT logged in -> Go to Login
+    next({ name: 'auth.login' })
+  } else if (to.name === 'auth.login' && session) {
+    // If user IS logged in but tries to go to Login -> Go to Dashboard
+    next({ name: 'default.dashboard' })
+  } else {
+    // Otherwise, allow navigation
+    next()
+  }
 })
 
 export default router

@@ -9,7 +9,6 @@
           <div class="card-body">
             <router-link :to="{ name: 'default.dashboard' }" class="navbar-brand d-flex align-items-center mb-3 text-primary">
               <brand-logo></brand-logo>
-              <h4 class="logo-title ms-3 mb-0"><brand-name></brand-name></h4>
             </router-link>
             <h2 class="mb-2">Reset Password</h2>
             <p>Enter your email address and we'll send you an email with instructions to reset your password.</p>

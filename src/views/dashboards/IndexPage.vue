@@ -150,7 +150,7 @@
                      <span class="fw-bold">{{ item.form_title }}</span>
                   </td>
                   <td>
-                    <span v-if="item.status === 'Completed'" class="fw-bold text-dark">{{ item.score }} / 27</span>
+                    <span v-if="item.status === 'Completed'" class="fw-bold text-dark">{{ item.score }}</span>
                     <span v-else class="text-muted">-</span>
                   </td>
                   <td>
@@ -187,15 +187,14 @@
 </template>
 
 <script>
-// 1. Added 'inject' to imports
 import { onMounted, onBeforeUnmount, ref, inject } from 'vue'
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import AOS from 'aos'
 import { supabase } from '@/supabase' 
+import { useMockStore } from '@/store/MockStore.js' // Added Store Import
 import PatientActionModal from '@/components/PatientActionModal.vue'
 
-// Styles needed for Swiper
 import 'swiper/css';
 import 'swiper/css/navigation';
 
@@ -210,15 +209,39 @@ export default {
     const inbox = ref([])
     let realtimeChannel = null
 
-    // 2. Inject SweetAlert
     const swal = inject('$swal')
+    const { getFormDefinition } = useMockStore() // Use the store
 
-    // Modal State
     const showModal = ref(false)
     const selectedPatient = ref(null)
     const selectedSubmission = ref(null)
 
-    // --- 1. Fetch Inbox Data ---
+    // Option Sets Mapping (Matches CustomFormRunner)
+    const optionSets = {
+        scale04: [
+            { text: '0 - None', value: '0' }, { text: '1 - Slight', value: '1' },
+            { text: '2 - Mild', value: '2' }, { text: '3 - Moderate', value: '3' },
+            { text: '4 - Severe', value: '4' }
+        ],
+        likert_agree: [
+            { text: 'Strongly Disagree', value: '0' }, { text: 'Disagree', value: '1' },
+            { text: 'Neutral', value: '2' }, { text: 'Agree', value: '3' },
+            { text: 'Strongly Agree', value: '4' }
+        ],
+        yesno: [
+            { text: 'No', value: '0' }, { text: 'Yes', value: '1' }
+        ],
+        freq: [
+            { text: 'Never', value: '0' }, { text: 'Rarely', value: '1' },
+            { text: 'Sometimes', value: '2' }, { text: 'Often', value: '3' },
+            { text: 'Daily', value: '4' }
+        ],
+        duration: [
+            { text: 'Less than 1 week', value: '0' }, { text: '1 - 4 weeks', value: '1' },
+            { text: '1 - 3 months', value: '2' }, { text: 'More than 3 months', value: '3' }
+        ]
+    }
+
     const fetchInbox = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -231,7 +254,6 @@ export default {
 
       if (error || !assignments) return
 
-      // Get Patient Names
       const patientIds = [...new Set(assignments.map(a => a.patient_id))]
       let profilesMap = {}
       
@@ -256,32 +278,65 @@ export default {
       }))
     }
 
-    // --- 2. Handle Review Click (Using Modal) ---
+    // --- TRANSFORM DATA FOR REVIEW ---
     const handleReview = (item) => {
       selectedPatient.value = {
         name: item.patientName,
         id: item.patientId
       }
 
-      const mockData = { 
-        q1: 2, q2: 3, q3: 1, 
-        q4: 0, q5: 0, 
-        q6: 0, q7: 0, q8: 0,
-        q11: 0 
+      // 1. Parse the JSON answers
+      let rawData = {}
+      if (item.answers) {
+        if (typeof item.answers === 'string') {
+          try { rawData = JSON.parse(item.answers) } catch (e) { /**/ }
+        } else {
+          rawData = item.answers
+        }
+      }
+
+      // 2. Load the Form Definition to get readable Question Text
+      const formDef = getFormDefinition(item.form_id)
+      let prettyData = {}
+
+      if (formDef && formDef.questions) {
+          // Map Keys (IDs) to Question Text and Values to Option Text
+          Object.keys(rawData).forEach(key => {
+              const question = formDef.questions.find(q => q.id === key)
+              const answerVal = rawData[key]
+              
+              if (question) {
+                  // Found the question, use its Text
+                  const label = question.text
+                  
+                  // Decode the answer value (e.g., '1' -> 'Yes')
+                  let readableAnswer = answerVal
+                  if (optionSets[question.type]) {
+                      const opt = optionSets[question.type].find(o => o.value == answerVal)
+                      if (opt) readableAnswer = opt.text
+                  }
+
+                  prettyData[label] = readableAnswer
+              } else {
+                  // Fallback if question deleted/missing
+                  prettyData[key] = answerVal
+              }
+          })
+      } else {
+          // Fallback if form definition not found
+          prettyData = rawData
       }
 
       selectedSubmission.value = {
-        formId: 'level-1-adult', 
-        formName: item.form_title || 'Level 1 Cross-Cutting Symptom Measure',
+        formId: item.form_id || 'custom', 
+        formName: item.form_title || 'Assessment',
         score: item.score,
-        data: (item.data && Object.keys(item.data).length > 0) ? item.data : mockData
+        data: prettyData // Now passing readable text!
       }
 
-      console.log("Opening Modal with:", selectedSubmission.value) 
       showModal.value = true
     }
 
-    // --- NEW: Handle Success Toast ---
     const handleAssignmentSuccess = () => {
       swal.fire({
         title: 'Sent!',
@@ -292,17 +347,13 @@ export default {
         toast: true,
         position: 'top-end'
       })
-      
-      // Also refresh the inbox so the new status shows up immediately
       fetchInbox()
     }
 
-    // --- 3. Realtime Listener ---
     const setupRealtime = () => {
       realtimeChannel = supabase
         .channel('public:assignments')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, () => {
-          console.log("Change detected! Refreshing inbox...")
           fetchInbox()
         })
         .subscribe()
@@ -317,7 +368,6 @@ export default {
         once: true,
         duration: 800
       })
-      
       fetchInbox()
       setupRealtime()
     })
@@ -326,7 +376,6 @@ export default {
       if (realtimeChannel) supabase.removeChannel(realtimeChannel)
     })
 
-    // --- 4. Restored Static Chart Data ---
     const kpiCards = ref([
       { title: 'Pending Assessments', value: '72' },
       { title: 'Completed Today', value: '14' },
@@ -391,7 +440,7 @@ export default {
         modules, kpiCards, activityChart, statusChart, riskChart, 
         inbox, fetchInbox, handleReview,
         showModal, selectedPatient, selectedSubmission,
-        handleAssignmentSuccess // Return the new function
+        handleAssignmentSuccess
     }
   }
 }
