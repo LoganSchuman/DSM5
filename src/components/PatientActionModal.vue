@@ -67,7 +67,7 @@
           <div v-if="activeTab === 'readOnly' && submission">
             <div class="alert alert-light border d-flex justify-content-between align-items-center">
               <strong>Total Score:</strong> 
-              <span class="badge bg-dark fs-6">{{ submission.score }} / 27</span>
+              <span class="fs-6 text-dark">{{ submission.score }} / 27</span>
             </div>
             <div class="list-group list-group-flush">
               <div v-for="(value, key) in submission.data" :key="key" class="list-group-item px-0 py-3">

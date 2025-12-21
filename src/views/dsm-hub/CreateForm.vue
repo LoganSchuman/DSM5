@@ -38,7 +38,7 @@
             
             <div v-for="(q, index) in questions" :key="q.id" class="card mb-3 border">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="badge bg-primary">Q{{ index + 1 }}</span>
                         <button type="button" class="btn btn-sm btn-outline-danger" @click="removeQuestion(index)">
                             <i class="bi bi-trash"></i> Remove
