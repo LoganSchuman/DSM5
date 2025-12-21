@@ -5,7 +5,7 @@
         <b-col md="12">
           <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
-              <h1>DSM-5 Dashboard</h1>
+              <h1>Dashboard</h1>
               <p>Your portal for administering forms and understanding your patients</p>
             </div>
             <div>

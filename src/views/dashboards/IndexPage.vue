@@ -72,7 +72,7 @@
               </div>
             </div>
             <div class="card-body">
-              <apexchart :height="195" type="bar" class="dactivity1" id="dactivity1" :options="riskChart.options" :series="riskChart.series" />
+              <apexchart :height="250" type="bar" class="dactivity1" id="dactivity1" :options="riskChart.options" :series="riskChart.series" />
             </div>
           </div>
         </div>
@@ -86,23 +86,20 @@
             <div class="flex-wrap card-header d-flex justify-content-between">
               <div class="header-title">
                 <h4 class="mb-2 card-title">Recent Activity</h4>
-                <p class="mb-0">Last patient events</p>
+                <p class="mb-0">Latest assignments & submissions</p>
               </div>
             </div>
             <div class="card-body">
-              <div class="mb-2 d-flex profile-media align-items-top">
-                <div class="mt-1 profile-dots-pills border-primary"></div>
+              <div v-for="act in recentActivity" :key="act.id" class="mb-2 d-flex profile-media align-items-top">
+                <div :class="`mt-1 profile-dots-pills ${act.color}`"></div>
                 <div class="ms-4">
-                  <h6 class="mb-1">System Live</h6>
-                  <span class="mb-0">Realtime Connection Active</span>
+                  <h6 class="mb-1">{{ act.title }}</h6>
+                  <span class="mb-0">{{ act.desc }}</span>
+                  <div class="text-muted small mt-1">{{ act.time }}</div>
                 </div>
               </div>
-              <div class="mb-2 d-flex profile-media align-items-top">
-                <div class="mt-1 profile-dots-pills border-success"></div>
-                <div class="ms-4">
-                  <h6 class="mb-1">Inbox Synced</h6>
-                  <span class="mb-0">Waiting for updates...</span>
-                </div>
+              <div v-if="recentActivity.length === 0" class="text-center text-muted py-3">
+                  No recent activity found.
               </div>
             </div>
           </div>
@@ -192,7 +189,7 @@ import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/vue'
 import AOS from 'aos'
 import { supabase } from '@/supabase' 
-import { useMockStore } from '@/store/MockStore.js' // Added Store Import
+import { useMockStore } from '@/store/MockStore.js' 
 import PatientActionModal from '@/components/PatientActionModal.vue'
 
 import 'swiper/css';
@@ -207,16 +204,17 @@ export default {
   setup() {
     const modules = [Navigation]
     const inbox = ref([])
+    const recentActivity = ref([]) // New state for activity feed
     let realtimeChannel = null
 
     const swal = inject('$swal')
-    const { getFormDefinition } = useMockStore() // Use the store
+    const { getFormDefinition } = useMockStore() 
 
     const showModal = ref(false)
     const selectedPatient = ref(null)
     const selectedSubmission = ref(null)
 
-    // Option Sets Mapping (Matches CustomFormRunner)
+    // Option Sets Mapping 
     const optionSets = {
         scale04: [
             { text: '0 - None', value: '0' }, { text: '1 - Slight', value: '1' },
@@ -270,22 +268,37 @@ export default {
         }
       }
 
+      // Populate Inbox
       inbox.value = assignments.map(a => ({
         ...a,
         patientName: profilesMap[a.patient_id] || 'Unknown Patient',
         patientInitials: (profilesMap[a.patient_id] || 'U').substring(0,2).toUpperCase(),
         patientId: a.patient_id
       }))
+
+      // --- POPULATE RECENT ACTIVITY ---
+      // We take the top 5 most recent items from the inbox
+      recentActivity.value = inbox.value.slice(0, 5).map(item => {
+        const isCompleted = item.status === 'Completed'
+        return {
+            id: item.id,
+            title: isCompleted ? 'Assessment Completed' : 'Form Assigned',
+            desc: isCompleted 
+                ? `${item.patientName} submitted ${item.form_title}` 
+                : `Assigned ${item.form_title} to ${item.patientName}`,
+            color: isCompleted ? 'border-success' : 'border-primary',
+            // Uses created_at because we don't have a 'completed_at' column
+            time: new Date(item.created_at).toLocaleDateString()
+        }
+      })
     }
 
-    // --- TRANSFORM DATA FOR REVIEW ---
     const handleReview = (item) => {
       selectedPatient.value = {
         name: item.patientName,
         id: item.patientId
       }
 
-      // 1. Parse the JSON answers
       let rawData = {}
       if (item.answers) {
         if (typeof item.answers === 'string') {
@@ -295,35 +308,27 @@ export default {
         }
       }
 
-      // 2. Load the Form Definition to get readable Question Text
       const formDef = getFormDefinition(item.form_id)
       let prettyData = {}
 
       if (formDef && formDef.questions) {
-          // Map Keys (IDs) to Question Text and Values to Option Text
           Object.keys(rawData).forEach(key => {
               const question = formDef.questions.find(q => q.id === key)
               const answerVal = rawData[key]
               
               if (question) {
-                  // Found the question, use its Text
                   const label = question.text
-                  
-                  // Decode the answer value (e.g., '1' -> 'Yes')
                   let readableAnswer = answerVal
                   if (optionSets[question.type]) {
                       const opt = optionSets[question.type].find(o => o.value == answerVal)
                       if (opt) readableAnswer = opt.text
                   }
-
                   prettyData[label] = readableAnswer
               } else {
-                  // Fallback if question deleted/missing
                   prettyData[key] = answerVal
               }
           })
       } else {
-          // Fallback if form definition not found
           prettyData = rawData
       }
 
@@ -331,7 +336,7 @@ export default {
         formId: item.form_id || 'custom', 
         formName: item.form_title || 'Assessment',
         score: item.score,
-        data: prettyData // Now passing readable text!
+        data: prettyData 
       }
 
       showModal.value = true
@@ -440,7 +445,8 @@ export default {
         modules, kpiCards, activityChart, statusChart, riskChart, 
         inbox, fetchInbox, handleReview,
         showModal, selectedPatient, selectedSubmission,
-        handleAssignmentSuccess
+        handleAssignmentSuccess,
+        recentActivity // Make sure to return this
     }
   }
 }
